@@ -1,6 +1,7 @@
 package com.example.spring_homework_week03.models;
 
 import com.example.spring_homework_week03.utils.Timestamped;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -26,11 +27,9 @@ public class Board extends Timestamped {
     @Column(nullable = false)
     private String content;
 
+    @JsonIgnore
     @Column(nullable = false)
     private String password;
-
-
-
 
     public Board( BoardRequestDto requestDto ){
         this.title = requestDto.getTitle();
@@ -43,5 +42,6 @@ public class Board extends Timestamped {
         this.title = requestDto.getTitle();
         this.content = requestDto.getContent();
         this.author = requestDto.getAuthor();
+        this.password = requestDto.getPassword();
     }
 }

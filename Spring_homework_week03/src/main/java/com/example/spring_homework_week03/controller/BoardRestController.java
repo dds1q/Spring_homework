@@ -1,15 +1,10 @@
 package com.example.spring_homework_week03.controller;
 
 
-import com.example.spring_homework_week03.models.Board;
-import com.example.spring_homework_week03.models.BoardPasswordRequestDto;
-import com.example.spring_homework_week03.models.BoardRepository;
-import com.example.spring_homework_week03.models.BoardRequestDto;
+import com.example.spring_homework_week03.models.*;
 import com.example.spring_homework_week03.service.BoardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RequiredArgsConstructor
 @RestController
@@ -19,15 +14,13 @@ public class BoardRestController {
     private final BoardService boardService;
 
     @GetMapping("/api/board")
-    public List<Board> getBoard_list(){
-        return boardRepository.findAllByOrderByModifiedAtDesc();
+    public ListResponse getBoard_list(){
+        return boardService.getBoard_list();
     }
 
     @GetMapping("/api/board/{id}")
-    public Board getBoardById( @PathVariable Long id ){
-        Board board = boardRepository.findById( id ).orElseThrow(
-                () -> new NullPointerException("게시글이 존재 하지 않습니다"));
-        return board;
+    public SingleResponse getBoardById(@PathVariable Long id ){
+        return boardService.getBoardById( id );
     }
 
     @PostMapping("/api/board")
