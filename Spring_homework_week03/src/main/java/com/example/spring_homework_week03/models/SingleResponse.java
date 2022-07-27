@@ -1,7 +1,7 @@
 package com.example.spring_homework_week03.models;
 
-public class SingleResponse {
+public class SingleResponse<T> {
     public boolean success = true;
-    public Board data;
+    public T data;
     public String error;
 }

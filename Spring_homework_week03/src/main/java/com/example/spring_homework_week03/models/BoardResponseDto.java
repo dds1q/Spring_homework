@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 @Getter@Setter
 public class BoardResponseDto {
     private LocalDateTime modifiedAt;
+    private String title;
     private String author;
     private String content;
 }
