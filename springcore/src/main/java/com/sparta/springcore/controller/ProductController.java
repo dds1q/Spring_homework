@@ -7,6 +7,7 @@ import com.sparta.springcore.model.UserRoleEnum;
 import com.sparta.springcore.security.UserDetailsImpl;
 import com.sparta.springcore.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -47,16 +48,32 @@ public class ProductController {
 
     // 로그인한 회원이 등록한 관심 상품 조회
     @GetMapping("/api/products")
-    public List<Product> getProducts(@AuthenticationPrincipal UserDetailsImpl userDetails) {
-// 로그인 되어 있는 회원 테이블의 ID
-        Long userId = userDetails.getUsers().getId();
+    public Page<Product> getProducts(
+            @RequestParam("page") int page,
+            @RequestParam("size") int size,
+            @RequestParam("sortBy") String sortBy,
+            @RequestParam("isAsc") boolean isAsc,
+            @AuthenticationPrincipal UserDetailsImpl userDetails
+    ){
 
-        return productService.getProducts(userId);
+
+        // 로그인 되어 있는 회원 테이블의 ID
+        Long userId = userDetails.getUsers().getId();
+        page -= 1;
+
+        return productService.getProducts(userId , page , size , sortBy, isAsc );
     }
 
-    @Secured(UserRoleEnum.Authority.ADMIN )
+    // 관리자용 전체 상품 조회
+    @Secured(UserRoleEnum.Authority.ADMIN)
     @GetMapping("/api/admin/products")
-    public List<Product> getAllProduct() {
-        return productService.getAllProducts();
+    public Page<Product> getAllProduct(
+            @RequestParam("page") int page,
+            @RequestParam("size") int size,
+            @RequestParam("sortBy") String sortBy,
+            @RequestParam("isAsc") boolean isAsc
+    ) {
+        page -= 1;
+        return productService.getAllProducts( page , size , sortBy , isAsc );
     }
 }
