@@ -1,16 +1,17 @@
 package com.sparta.hanghae_assignment_week04.service;
 
-import com.sparta.hanghae_assignment_week04.dto.LoginRequestDto;
-import com.sparta.hanghae_assignment_week04.dto.SignupRequestDto;
-import com.sparta.hanghae_assignment_week04.dto.TokenDto;
-import com.sparta.hanghae_assignment_week04.dto.TokenRequestDto;
+import com.sparta.hanghae_assignment_week04.dto.*;
 import com.sparta.hanghae_assignment_week04.model.Authority;
 import com.sparta.hanghae_assignment_week04.model.RefreshToken;
 import com.sparta.hanghae_assignment_week04.model.Users;
 import com.sparta.hanghae_assignment_week04.repository.RefreshTokenRepository;
 import com.sparta.hanghae_assignment_week04.repository.UserRepository;
+import com.sparta.hanghae_assignment_week04.security.JwtFilter;
 import com.sparta.hanghae_assignment_week04.security.TokenProvider;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.core.Authentication;
@@ -28,7 +29,7 @@ public class AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
 
     @Transactional
-    public Users signup( SignupRequestDto requestDto) {
+    public ResponseDto<?> signup( SignupRequestDto requestDto) {
         String username = requestDto.getUsername();
         String password = requestDto.getPassword();
         String passwordConfirm = requestDto.getPasswordConfirm();
@@ -41,11 +42,12 @@ public class AuthService {
         String secret_password = passwordEncoder.encode( password );
 
         Users user = new Users( username, secret_password , Authority.ROLE_USER );
-        return userRepository.save( user );
+        return ResponseDto.success(userRepository.save( user ) );
     }
 
     @Transactional
-    public TokenDto login( LoginRequestDto requestDto) {
+    public ResponseEntity<?> login(LoginRequestDto requestDto) {
+
         // 1. Login ID/PW 를 기반으로 AuthenticationToken 생성
         UsernamePasswordAuthenticationToken authenticationToken = requestDto.toAuthentication();
 
@@ -53,6 +55,7 @@ public class AuthService {
         //    authenticate 메서드가 실행이 될 때 CustomUserDetailsService 에서 만들었던 loadUserByUsername 메서드가 실행됨
         Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
 
+        Users user = userRepository.findByUsername( requestDto.getUsername() ).orElse( null );
         // 3. 인증 정보를 기반으로 JWT 토큰 생성
         TokenDto tokenDto = tokenProvider.generateTokenDto(authentication);
 
@@ -64,8 +67,13 @@ public class AuthService {
 
         refreshTokenRepository.save(refreshToken);
 
+        HttpHeaders httpHeaders= new HttpHeaders();
+        httpHeaders.add(JwtFilter.AUTHORIZATION_HEADER , JwtFilter.BEARER_PREFIX + tokenDto.getAccessToken());
+        httpHeaders.add("Refresh-Token" , tokenDto.getRefreshToken());
+
+
         // 5. 토큰 발급
-        return tokenDto;
+        return new ResponseEntity<>( ResponseDto.success( user ), httpHeaders, HttpStatus.OK) ;
     }
 
     @Transactional

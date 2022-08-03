@@ -1,75 +1,27 @@
 package com.sparta.hanghae_assignment_week04.security;
-//
-//import org.springframework.context.annotation.Bean;
-//import org.springframework.context.annotation.Configuration;
-//import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-//import org.springframework.security.config.annotation.web.builders.WebSecurity;
-//import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-//import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-//import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-//
-//@Configuration
-//@EnableWebSecurity // 스프링 Security 지원을 가능하게 함
-//public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
-//
-//    @Bean
-//    public BCryptPasswordEncoder encodePassword() {
-//        return new BCryptPasswordEncoder();
-//    }
-//
-//    @Override
-//    public void configure(WebSecurity web) {
-//// h2-console 사용에 대한 허용 (CSRF, FrameOptions 무시)
-//        web
-//                .ignoring()
-//                .antMatchers("/h2-console/**");
-//    }
-//
-//    @Override
-//    protected void configure(HttpSecurity http) throws Exception {
-//// 회원 관리 처리 API (POST /user/**) 에 대해 CSRF 무시
-//        http.csrf()
-//                .ignoringAntMatchers("/api/users/**");
-//
-//        http.authorizeRequests()
-//// 회원 관리 처리 API 전부를 login 없이 허용
-//                .antMatchers("/api/users/**").permitAll()
-//// 그 외 어떤 요청이든 '인증'
-//                .anyRequest().authenticated()
-//                .and()
-//// [로그인 기능]
-//                .formLogin()
-//// 로그인 View 제공 (GET /user/login)
-//                .loginPage("/api/users/login")
-//// 로그인 처리 (POST /user/login)
-//                .loginProcessingUrl("/api/users/login")
-//// 로그인 처리 후 성공 시 URL
-//                .defaultSuccessUrl("/")
-//// 로그인 처리 후 실패 시 URL
-//                .failureUrl("/api/users/login?error")
-//                .permitAll()
-//                .and()
-//// [로그아웃 기능]
-//                .logout()
-//// 로그아웃 처리 URL
-//                .logoutUrl("/api/users/logout")
-//                .permitAll();
-//    }
-//}
+
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
+import org.springframework.boot.autoconfigure.security.ConditionalOnDefaultWebSecurity;
+import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
 
 @EnableWebSecurity
 @RequiredArgsConstructor
-public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
+@Configuration(proxyBeanMethods = false)
+@ConditionalOnDefaultWebSecurity
+@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
+public class WebSecurityConfig{
     private final TokenProvider tokenProvider;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
@@ -80,14 +32,16 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     // h2 database 테스트가 원활하도록 관련 API 들은 전부 무시
-    @Override
-    public void configure(WebSecurity web) {
-        web.ignoring()
+
+    @Bean
+    public WebSecurityCustomizer webSecurityCustomizer() {
+        return  (web) -> web.ignoring()
                 .antMatchers("/h2-console/**", "/favicon.ico");
     }
 
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
+    @Bean
+    @Order(SecurityProperties.BASIC_AUTH_ORDER)
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         // CSRF 설정 Disable
         http.csrf().disable()
 
@@ -117,5 +71,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 // JwtFilter 를 addFilterBefore 로 등록했던 JwtSecurityConfig 클래스를 적용
                 .and()
                 .apply(new JwtSecurityConfig(tokenProvider));
+
+
+        return http.build();
     }
 }

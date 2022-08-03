@@ -26,6 +26,7 @@ public class Users extends Timestamped {
     @Column(nullable = false)
     private String password;
 
+    @JsonIgnore
     @Enumerated(EnumType.STRING)
     private Authority authority;
 
